@@ -8,6 +8,7 @@ const { auth_secret } = require('../config/base.config')
 
 module.exports = {
     login: async (req, res) => {
+        res.header("Access-Control-Allow-Origin", "*");
         try {
             const { username, password } = req.body;
 

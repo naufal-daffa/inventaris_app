@@ -1,3 +1,4 @@
+const cors = require('cors');
 const express = require('express')
 const app = express()
 const port = 5000
@@ -9,6 +10,9 @@ const loanRoutes = require('./routes/loan.routes')
 const returnRoutes = require('./routes/return.routes')
 const loginRoutes = require('./routes/login.routes')
 const { verifyToken } = require('./middlewares/auth')
+
+app.use(cors());
+app.use(express.json());
 
 db.sequelize.authenticate()
     .then(() => console.log("Database berhasil tersambung"))
