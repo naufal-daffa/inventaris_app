@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventory_apps/services/auth_service.dart';
 import 'package:inventory_apps/utils/color.dart';
 import 'package:inventory_apps/views/dashboard.dart';
 import 'package:inventory_apps/widgets/button/custom_button.dart';
@@ -13,13 +14,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -87,10 +89,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
 
                     CustomTextField(
-                      controller: _emailController,
-                      hint: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email_outlined,
+                      controller: _usernameController,
+                      hint: 'username',
+                      keyboardType: TextInputType.name,
+                      prefixIcon: Icons.person_outline,
                     ),
 
                     const SizedBox(height: 14),
@@ -114,18 +116,54 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    CustomButton(
-                      label: 'Login',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DashboardScreen(),
+                    _isLoading
+                        ? const CircularProgressIndicator(color: Colors.blue)
+                        : CustomButton(
+                            label: 'Login',
+                            onTap: () async {
+                              setState(() => _isLoading = true);
+
+                              final username = _usernameController.text;
+                              final password = _passwordController.text;
+                              if (username.isEmpty ||
+                                  password.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Username and password cannot be empty",
+                                    ),
+                                  ),
+                                );
+                                setState(() => _isLoading = false);
+                                return;
+                              }
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              bool isSuccsess = await AuthService.login(
+                                username,
+                                password,
+                              );
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              if (isSuccsess) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const DashboardScreen(),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Login failed"),
+                                  ),
+                                );
+                              }
+                            },
+                            backgroundColor: AppColors.primaryBlue,
                           ),
-                        );
-                      },
-                      backgroundColor: AppColors.primaryBlue,
-                    ),
                     const SizedBox(height: 20),
                   ],
                 ),
