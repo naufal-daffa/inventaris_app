@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:inventory_apps/config/api_config.dart';
+
 class ItemModel {
   final int id;
   final String name;
@@ -18,8 +20,9 @@ class ItemModel {
   factory ItemModel.fromJson(Map<String, dynamic> json) {
     String? rawImageUrl = json['image'];
     if (rawImageUrl != null) {
-      rawImageUrl = rawImageUrl.replaceAll("localhost", "15.15.5.163");
-      rawImageUrl = rawImageUrl.replaceAll(":3000", ":5000");
+      rawImageUrl = rawImageUrl.replaceAll("http://localhost:3000/", ApiConfig.baseUrl);
+      rawImageUrl = rawImageUrl.replaceAll("http://localhost:5000/", ApiConfig.baseUrl);
+      // rawImageUrl = rawImageUrl.replaceAll(":3000", ":5000");
     }
     return ItemModel(
       id: json['id'],

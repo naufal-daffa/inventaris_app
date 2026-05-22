@@ -2,7 +2,7 @@ const Validator = require("fastest-validator");
 const v = new Validator();
 const { response } = require("../helpers/response.formatter");
 const { Item, Loan } = require("../models");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const fs = require('fs');
 const path = require('path');
 
@@ -109,9 +109,9 @@ module.exports = {
                 return res.status(404).json(response(404, 'data not found'));
             }
             // jika ada, bandingkan stock. stock yang diupdate tidak boleh lebih kecil dari stock saat ini
-            if (Number(stock) < Number(item.stock)) {
-                return res.status(400).json(response(400, 'The updated stock is less than the actual stock.'));
-            }
+            // if (Number(stock) < Number(item.stock)) {
+            //     return res.status(400).json(response(400, 'The updated stock is less than the actual stock.'));
+            // }
 
             // jika pada req terdapat file
             if (req.file) {
@@ -127,7 +127,7 @@ module.exports = {
             const updateProcess = await Item.update({
                 name: name,
                 stock: stock,
-                image: (req.file ? req.file.filename : item.image)
+                image: (req.file ? req.file.filename : item.getDataValue('image'))
             }, {
                 where: {id: id}
             });
@@ -145,21 +145,40 @@ module.exports = {
             // include : mengambil relasi melalui model, pastikan sudah didaftarkan di model terkait
             const item = await Item.findByPk(id, { include : Loan });
             // relasi bertipe hasMany, jika ksoong berupa [] = length 0
-            if (item.Loans.length == 0) {
-                // hapus gambar
-                const rawImageName = item.getDataValue('image');
-                const oldFilePath = path.join(process.cwd(), 'uploads', rawImageName);
-                if (fs.existsSync(oldFilePath)) {
-                    fs.unlinkSync(oldFilePath); 
-                }
-                // hapus data jika tidak ada relasi
-                const deleteProcess = await Item.destroy({
-                    where: {id: id}
-                });
-                return res.status(200).json(response(200, 'deleted'));
-            } else {
-                return res.status(400).json(response(400, 'Item is already related to a loan'));
+            // if (item.Loans.length == 0) {
+            //     // hapus gambar
+            //     const rawImageName = item.getDataValue('image');
+            //     const oldFilePath = path.join(process.cwd(), 'uploads', rawImageName);
+            //     if (fs.existsSync(oldFilePath)) {
+            //         fs.unlinkSync(oldFilePath); 
+            //     }
+            //     // hapus data jika tidak ada relasi
+            //     const deleteProcess = await Item.destroy({
+            //         where: {id: id}
+            //     });
+            //     return res.status(200).json(response(200, 'deleted'));
+            // } else {
+            //     return res.status(400).json(response(400, 'Item is already related to a loan'));
+            // }
+            if(!item){
+                return res.status(404).json(response(404, 'data not found'))
             }
+
+            if (!item.Loans || item.Loans.length == 0){
+                const rawImageName = item.getDataValue('image')
+                if(rawImageName){
+                    const oldFilePath = path.join(process.cwd(), 'uploads', rawImageName)
+                    if(fs.existsSync(oldFilePath)){
+                        fs.unlinkSync(oldFilePath)
+                    }
+                }
+            }
+
+            const deleteProcess = await Item.destroy({
+                where: {id: id}
+            })
+
+            return res.status(200).json(response(200, "Deleted Item"))
         } catch (error) {
             return res.status(500).json(response(500, 'server error', error.message));
         }
